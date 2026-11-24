@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#eadcea">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Plans">
+<meta name="description" content="Egyszerű heti tervező: Most, Későbbre, Ne felejtsd el és a hét napjai. Offline működik, az adatok a böngészőben maradnak.">
+<title>Plans – Heti tervező</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23b88ba9'/%3E%3Cpath d='M17 33l10 10 21-23' fill='none' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{
+ --ink:#4b4454;--muted:#857c8b;--soft:#a79fac;
+ --surface:rgba(255,255,255,.74);--surface-solid:#fffcfd;--surface-hi:rgba(255,255,255,.92);
+ --line:rgba(120,96,128,.16);--accent:#8f6489;--accent-ink:#fff;--accent-soft:rgba(215,164,196,.22);
+ --done:#a8a0ab;--danger:#a04d70;--chip:rgba(255,255,255,.7);
+ --shadow:0 10px 30px rgba(84,68,93,.10),0 1px 2px rgba(84,68,93,.06);
+ --focus:rgba(160,110,150,.45);
+ --bg:radial-gradient(ellipse at 8% 4%,#bcdcd0 0,transparent 38%),radial-gradient(ellipse at 95% 8%,#ebbccc 0,transparent 40%),radial-gradient(ellipse at 92% 95%,#d8dcb2 0,transparent 38%),radial-gradient(ellipse at 5% 90%,#d3cdea 0,transparent 36%),linear-gradient(160deg,#ece0ec,#dde1ec 52%,#ecdcd6);
+ --bg-flat:#e9dce8;
+}
+html[data-theme="dark"]{
+ --ink:#efe8f1;--muted:#b6abba;--soft:#8f8494;
+ --surface:rgba(44,38,50,.78);--surface-solid:#2c2632;--surface-hi:rgba(58,50,65,.95);
+ --line:rgba(230,210,235,.13);--accent:#c99cc1;--accent-ink:#2a2230;--accent-soft:rgba(201,156,193,.14);
+ --done:#857b89;--danger:#e58aac;--chip:rgba(70,60,78,.7);
+ --shadow:0 12px 34px rgba(0,0,0,.28);
+ --focus:rgba(214,170,206,.5);
+ --bg:radial-gradient(ellipse at 8% 4%,#2f4a45 0,transparent 38%),radial-gradient(ellipse at 95% 8%,#553a4a 0,transparent 40%),radial-gradient(ellipse at 92% 95%,#474b33 0,transparent 38%),radial-gradient(ellipse at 5% 90%,#3a3554 0,transparent 36%),linear-gradient(160deg,#27222d,#2e2e3b 52%,#382b32);
+ --bg-flat:#29242e;
+ color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{min-height:100%;background:var(--bg-flat);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;min-height:100vh;min-height:100dvh;color:var(--ink);font-family:ui-rounded,"SF Pro Rounded","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background:transparent;-webkit-tap-highlight-color:transparent;line-height:1.4}
+body:before{content:"";position:fixed;top:0;right:0;bottom:0;left:0;z-index:-1;background:var(--bg);pointer-events:none}
+body.sheet-open{overflow:hidden}
+button,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-user-select:none;user-select:none}
+button:focus-visible,textarea:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.app{max-width:1180px;margin:0 auto;padding:14px 14px 28px;padding-top:max(14px,env(safe-area-inset-top));padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));padding-bottom:max(28px,env(safe-area-inset-bottom))}
+
+/* fejléc */
+.topbar{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;gap:8px}
+.brand{grid-column:2;margin:0;text-align:center;font-family:"Segoe Script","Brush Script MT","Snell Roundhand",cursive;font-weight:400;font-size:clamp(40px,10vw,64px);line-height:1.1;letter-spacing:-1px;color:var(--accent)}
+.icon-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--chip);display:grid;place-items:center;padding:0;box-shadow:0 2px 8px rgba(80,60,90,.08)}
+.icon-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn:hover{background:var(--surface-hi)}
+
+/* hétválasztó */
+.weekbar{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px auto 16px;max-width:440px}
+.weekbar .center{flex:1;min-width:0;text-align:center}
+#weekLabel{display:block;font-size:17px;font-weight:600;letter-spacing:.01em}
+.week-sub{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:2px;min-height:26px}
+.pill{display:inline-block;font-size:11.5px;padding:2px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.today-link{border:0;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:3px 11px;font-size:12px;font-weight:600;min-height:26px}
+
+/* figyelmeztetés */
+.storage-warning{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#fff2d9;border:1px solid #d7a64d;color:#694c19;padding:10px 13px;border-radius:14px;margin:0 0 14px;font-size:13.5px}
+.storage-warning button{border:0;background:#694c19;color:#fff;border-radius:10px;padding:8px 12px;min-height:40px}
+
+/* panelek */
+.grid-top{display:grid;grid-template-columns:1fr;gap:12px}
+.right-stack{display:grid;gap:12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:16px 14px 10px;box-shadow:var(--shadow);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);min-width:0}
+.panel-head{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 8px}
+.panel h2{font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;margin:0}
+.count{font-size:11.5px;font-weight:600;color:var(--muted);background:var(--chip);border:1px solid var(--line);padding:1px 8px;border-radius:999px;letter-spacing:0}
+.count:empty{display:none}
+.week-panel{margin-top:12px;padding:16px 10px 10px}
+.week-grid{display:grid;grid-template-columns:1fr;gap:6px}
+.day{border-radius:18px;padding:10px 6px 2px}
+.day h3{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:15px;font-weight:600;margin:0 6px 2px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.day h3 small{font-size:12px;font-weight:500;color:var(--muted)}
+.day.today{background:var(--accent-soft)}
+.day.today h3{color:var(--accent)}
+.day.today h3 .pill{margin-left:6px;background:var(--accent);color:var(--accent-ink)}
+
+/* sorok */
+.task-list{display:flex;flex-direction:column}
+.task-row{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:start;min-height:44px}
+.check{width:40px;height:44px;border:0;background:transparent;padding:0;display:grid;place-items:center}
+.check span{width:22px;height:22px;border-radius:50%;border:2px solid var(--soft);display:block;position:relative;transition:background .15s,border-color .15s}
+.check:hover span{border-color:var(--accent)}
+.check[aria-checked="true"] span{background:var(--accent);border-color:var(--accent)}
+.check[aria-checked="true"] span:after{content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.task-input{display:block;width:100%;min-width:0;border:0;border-bottom:1px solid transparent;border-radius:0;background:transparent;padding:10px 2px 9px;font-size:16px;line-height:1.4;resize:none;overflow:hidden;outline:none;-webkit-appearance:none;appearance:none}
+.task-input:focus{border-bottom-color:var(--accent)}
+.task-input::placeholder{color:var(--soft)}
+.is-done .task-input{text-decoration:line-through;color:var(--done)}
+.remove{width:40px;height:44px;border:0;background:transparent;color:var(--soft);font-size:22px;line-height:1;padding:0;opacity:0;border-radius:12px}
+.task-row:hover .remove,.task-row:focus-within .remove{opacity:1}
+.remove:hover{color:var(--danger)}
+@media (hover:none){.remove{opacity:.55}}
+.add-row{display:flex;align-items:center;gap:8px;width:100%;margin:2px 0 4px;border:0;background:transparent;color:var(--accent);font-size:14px;font-weight:600;padding:0 0 0 9px;min-height:44px;border-radius:12px;text-align:left}
+.add-row:before{content:"+";display:grid;place-items:center;width:22px;height:22px;border-radius:50%;border:2px dashed currentColor;font-size:16px;line-height:1;opacity:.75}
+.add-row:hover{background:var(--accent-soft)}
+.empty-note{font-size:13px;color:var(--muted);margin:6px 8px 2px;padding:0}
+
+.footer{margin:18px 6px 0;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.5}
+.footer p{margin:2px 0}
+
+/* lapok (modal) */
+.sheet-backdrop{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(30,22,36,.42);display:flex;align-items:flex-end;justify-content:center;z-index:30}
+.sheet{width:100%;max-width:520px;max-height:88vh;overflow:auto;background:var(--surface-solid);color:var(--ink);border-radius:24px 24px 0 0;padding:10px 18px 18px;padding-bottom:max(18px,env(safe-area-inset-bottom));box-shadow:0 -10px 50px rgba(20,12,26,.25)}
+.sheet:before{content:"";display:block;width:40px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 12px}
+.sheet h2{font-size:18px;margin:0 0 4px}
+.sheet p{font-size:13.5px;color:var(--muted);margin:0 0 12px}
+.sheet h3{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:18px 0 8px}
+.sheet-list{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.pick{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface-hi);border-radius:14px;padding:11px 12px;width:100%;min-height:48px;font-size:15px}
+.pick:hover{border-color:var(--accent)}
+.pick b{color:var(--accent);font-size:18px;line-height:1}
+.pick small{display:block;color:var(--muted);font-size:12px}
+.sheet-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface-hi);border-radius:14px;padding:10px 16px;min-height:44px;font-size:14.5px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--accent-soft);padding:4px;border-radius:14px}
+.seg button{border:0;background:transparent;border-radius:11px;min-height:40px;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--surface-solid);box-shadow:0 1px 4px rgba(60,40,70,.15);font-weight:600}
+details{font-size:13px;color:var(--muted);margin-top:6px}
+summary{cursor:pointer;min-height:32px;padding:6px 0}
+details ul{margin:4px 0 0;padding-left:18px}
+.note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5}
+
+/* értesítés */
+.toast{position:fixed;left:50%;bottom:20px;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:12px;background:#4a4053;color:#fff;padding:8px 8px 8px 16px;border-radius:14px;box-shadow:var(--shadow);font-size:14px;z-index:40;max-width:calc(100vw - 24px);min-height:44px}
+.toast.plain{padding-right:16px}
+.toast button{border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:10px;padding:8px 12px;min-height:36px;font-weight:600}
+html[data-theme="dark"] .toast{background:#efe8f1;color:#2c2632}
+html[data-theme="dark"] .toast button{background:rgba(0,0,0,.1);color:#2c2632}
+#importFile{display:none}
+
+@media (min-width:600px){
+ .app{padding-left:max(22px,env(safe-area-inset-left));padding-right:max(22px,env(safe-area-inset-right))}
+ .week-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px}
+ .sheet-backdrop{align-items:center;padding:20px}
+ .sheet{border-radius:24px;max-height:85vh}
+ .sheet:before{display:none}
+}
+@media (min-width:900px){
+ .app{padding-top:max(22px,env(safe-area-inset-top))}
+ .grid-top{grid-template-columns:1.08fr .92fr;gap:14px;align-items:stretch}
+ .right-stack{grid-template-rows:auto auto;gap:14px;align-content:start}
+ .panel{padding:20px 18px 12px;border-radius:28px}
+ .panel.now{min-height:320px}
+ .week-panel{margin-top:14px;padding:20px 16px 12px}
+ .week-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 18px}
+ .task-row{grid-template-columns:34px minmax(0,1fr) 34px;min-height:38px}
+ .check{width:34px;height:38px}.remove{width:34px;height:38px;font-size:20px}
+ .check span{width:19px;height:19px}.check[aria-checked="true"] span:after{left:5px;top:1px;width:4px;height:9px}
+ .task-input{font-size:15px;padding:8px 2px 7px}
+ .later .task-list{max-height:220px;overflow:auto}
+ .remember .task-list{max-height:180px;overflow:auto}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <h1 class="brand">plans</h1>
+    <button class="icon-btn" data-act="menu" title="Beállítások és mentés" aria-label="Beállítások és mentés" style="grid-column:3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+  </header>
+
+  <nav class="weekbar" aria-label="Hét kiválasztása">
+    <button class="icon-btn" data-act="prev" title="Előző hét" aria-label="Előző hét"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="center">
+      <strong id="weekLabel" aria-live="polite"></strong>
+      <div class="week-sub"><span id="weekSub"></span><span class="pill" id="curPill">aktuális hét</span><button class="today-link" id="todayBtn" data-act="today" hidden>Vissza a mai hétre</button></div>
+    </div>
+    <button class="icon-btn" data-act="next" title="Következő hét" aria-label="Következő hét"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+  </nav>
+
+  <div id="storageWarning" class="storage-warning" role="alert" hidden><span>A böngésző nem tudta elmenteni az adatokat. Mentsd le JSON-fájlba, hogy ne vesszenek el.</span><button data-act="export">JSON mentése</button></div>
+
+  <main>
+    <div class="grid-top">
+      <section class="panel now" aria-labelledby="hNow">
+        <div class="panel-head"><h2 id="hNow">Most</h2><span class="count" id="cnt-now"></span></div>
+        <div class="task-list" id="list-now"></div>
+        <button class="add-row" data-add="now">Új sor</button>
+      </section>
+      <div class="right-stack">
+        <section class="panel later" aria-labelledby="hLater">
+          <div class="panel-head"><h2 id="hLater">Későbbre</h2><span class="count" id="cnt-later"></span></div>
+          <div class="task-list" id="list-later"></div>
+          <button class="add-row" data-add="later">Új ötlet / feladat</button>
+        </section>
+        <section class="panel remember" aria-labelledby="hRem">
+          <div class="panel-head"><h2 id="hRem">Ne felejtsd el</h2><span class="count" id="cnt-remember"></span></div>
+          <div class="task-list" id="list-remember"></div>
+          <button class="add-row" data-add="remember">Új emlékeztető</button>
+        </section>
+      </div>
+    </div>
+    <section class="panel week-panel" aria-labelledby="hWeek">
+      <div class="panel-head"><h2 id="hWeek">Az én hetem</h2><span class="count" id="cnt-week"></span></div>
+      <div class="week-grid" id="weekGrid"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p id="saveState">Az adatok csak ebben a böngészőben tárolódnak.</p>
+    <p>Plans v1.1.0 · Az alkalmazás kódját és leírását teljes egészében mesterséges intelligencia készítette (ChatGPT, OpenAI; átdolgozta: Claude Opus 5.5, Anthropic).</p>
+  </footer>
+</div>
+
+<div class="sheet-backdrop" id="laterSheet" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="laterTitle">
+    <h2 id="laterTitle">Válassz a későbbre mentett feladatokból</h2>
+    <p>Koppints egy elemre, és átkerül ide, vagy írj újat.</p>
+    <div class="sheet-list" id="laterChoices"></div>
+    <div class="sheet-actions">
+      <button class="btn" data-act="close">Mégse</button>
+      <button class="btn primary" data-act="modal-new">Új feladat írása</button>
+    </div>
+  </section>
+</div>
+
+<div class="sheet-backdrop" id="menuSheet" hidden>
+  <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+    <h2 id="menuTitle">Beállítások és mentés</h2>
+    <p>Az adatok csak ebben a böngészőben vannak, nem kerülnek fel sehova. Időnként ments JSON-fájlba, vagy ha másik eszközre viszed át.</p>
+    <h3>Téma</h3>
+    <div class="seg" role="group" aria-label="Téma">
+      <button data-theme-set="auto" aria-pressed="false">Automatikus</button>
+      <button data-theme-set="light" aria-pressed="false">Világos</button>
+      <button data-theme-set="dark" aria-pressed="false">Sötét</button>
+    </div>
+    <h3>Mentés</h3>
+    <div class="sheet-list">
+      <button class="pick" data-act="export"><b>↓</b><span>JSON mentése<small>Biztonsági mentés fájlba</small></span></button>
+      <button class="pick" data-act="import"><b>↑</b><span>JSON betöltése<small>Korábbi mentés visszatöltése (lecseréli a mostani adatokat)</small></span></button>
+      <button class="pick" data-act="download"><b>⌂</b><span>HTML letöltése<small>Offline példány, internet nélkül is fut</small></span></button>
+    </div>
+    <input id="importFile" type="file" accept="application/json,.json" aria-label="JSON-fájl kiválasztása">
+    <details>
+      <summary>Plans v1.1.0 – változások</summary>
+      <ul>
+        <li>1.1.0: kipipálható feladatok, visszavonható törlés, mobilos elrendezés, a mai nap kiemelése, menü, automatikus sortörés, javítások.</li>
+        <li>1.0.0: első változat.</li>
+      </ul>
+    </details>
+    <p class="note">Az alkalmazás kódját és leírását teljes egészében mesterséges intelligencia készítette (ChatGPT, OpenAI; átdolgozta: Claude Opus 5.5, Anthropic).</p>
+    <div class="sheet-actions"><button class="btn primary" data-act="close">Kész</button></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastMsg"></span><button id="toastUndo" data-act="undo" hidden>Visszavonás</button></div>
+
+<script>
+(()=>{
+'use strict';
+const PRISTINE='<!doctype html>\n'+document.documentElement.outerHTML;
+const APP_ID='plans-weekly-planner', SCHEMA=1, STORAGE='plans.weekly.state.v1';
+const DAYS=['Hétfő','Kedd','Szerda','Csütörtök','Péntek','Hétvége'];
+const MAX_LEN=500, MAX_ITEMS=500, MAX_WEEKS=1000;
+const EMPTY={now:'Mi a mai fókusz? Koppints az „Új sor” gombra.',later:'Ötletek és ráérős feladatok helye.',remember:'Apróságok, amiket nem akarsz elfelejteni.',day:'Még üres'};
+const $=s=>document.querySelector(s);
+const mq=window.matchMedia?window.matchMedia('(prefers-color-scheme: dark)'):null;
+let S=loadState(), todayKey=weekKey(new Date()), todayDate=new Date().toDateString(), currentWeek=todayKey;
+let pendingTarget=null, toastTimer=null, undo=null, lastFocus=null;
+
+/* dátum */
+function weekStart(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-(x.getDay()+6)%7);return x}
+function pad(n){return String(n).padStart(2,'0')}
+function weekKey(d){const x=weekStart(d);return x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate())}
+function keyDate(k){const p=k.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
+function plusDays(d,n){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()+n);return x}
+function addWeeks(k,n){return weekKey(plusDays(keyDate(k),n*7))}
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7)}
+function fmt(d){return d.toLocaleDateString('hu-HU',{month:'short',day:'numeric'})}
+function formatWeek(k){const a=keyDate(k);return fmt(a)+' – '+fmt(plusDays(a,6))}
+
+/* állapot */
+function uid(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function emptyWeek(){return{now:[],remember:[],days:[[],[],[],[],[],[]]}}
+function cleanTask(t){if(!t||typeof t!=='object'||typeof t.text!=='string')return null;return{id:(typeof t.id==='string'&&/^[\w-]{1,40}$/.test(t.id))?t.id:uid(),text:t.text.slice(0,MAX_LEN),done:t.done===true}}
+function cleanList(v){return Array.isArray(v)?v.slice(0,MAX_ITEMS).map(cleanTask).filter(Boolean):[]}
+function cleanState(raw){
+ const out={schema:SCHEMA,weeks:{},later:[],theme:'auto'};
+ if(!raw||typeof raw!=='object'||Array.isArray(raw))return out;
+ if(raw.schema!==undefined&&raw.schema!==SCHEMA)return out;
+ const W=raw.weeks;
+ if(W&&typeof W==='object'&&!Array.isArray(W)){
+  Object.keys(W).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&!isNaN(keyDate(k))).sort().slice(-MAX_WEEKS).forEach(k=>{
+   const w=W[k];if(!w||typeof w!=='object')return;
+   const nk=weekKey(keyDate(k));
+   out.weeks[nk]={now:cleanList(w.now),remember:cleanList(w.remember),days:[0,1,2,3,4,5].map(i=>Array.isArray(w.days)?cleanList(w.days[i]):[])};
+  });
+ }
+ out.later=cleanList(raw.later);
+ out.theme=['auto','light','dark'].indexOf(raw.theme)>=0?raw.theme:'auto';
+ return out;
+}
+function isEmptyWeek(w){return !w.now.length&&!w.remember.length&&w.days.every(d=>!d.length)}
+function snapshot(){const weeks={};Object.keys(S.weeks).sort().forEach(k=>{if(!isEmptyWeek(S.weeks[k]))weeks[k]=S.weeks[k]});return{schema:SCHEMA,weeks:weeks,later:S.later,theme:S.theme}}
+function loadState(){try{const raw=localStorage.getItem(STORAGE);return cleanState(raw?JSON.parse(raw):null)}catch(e){return cleanState(null)}}
+function save(){
+ try{localStorage.setItem(STORAGE,JSON.stringify(snapshot()));$('#storageWarning').hidden=true;$('#saveState').textContent='Mentve ebben a böngészőben · '+new Date().toLocaleTimeString('hu-HU',{hour:'2-digit',minute:'2-digit'});return true}
+ catch(e){$('#storageWarning').hidden=false;$('#saveState').textContent='A helyi mentés nem sikerült – ments JSON-fájlba!';return false}
+}
+function week(k){k=k||currentWeek;if(!S.weeks[k])S.weeks[k]=emptyWeek();return S.weeks[k]}
+function getList(scope,k){if(scope==='later')return S.later;const w=week(k);if(scope==='now')return w.now;if(scope==='remember')return w.remember;const m=/^day-([0-5])$/.exec(scope);return m?w.days[+m[1]]:null}
+
+/* megjelenítés */
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function rowHTML(t,scope,i){return '<div class="task-row'+(t.done?' is-done':'')+'" data-scope="'+scope+'" data-index="'+i+'">'+
+ '<button type="button" class="check" data-act="toggle" role="checkbox" aria-checked="'+t.done+'" aria-label="Kész" title="Kész"><span></span></button>'+
+ '<textarea class="task-input" rows="1" maxlength="'+MAX_LEN+'" aria-label="Feladat szövege" placeholder="Írj ide…" enterkeyhint="next">'+esc(t.text)+'</textarea>'+
+ '<button type="button" class="remove" data-act="remove" title="Sor törlése" aria-label="Sor törlése">×</button></div>'}
+function listHTML(items,scope){return items.length?items.map((t,i)=>rowHTML(t,scope,i)).join(''):'<p class="empty-note">'+EMPTY[scope.indexOf('day-')===0?'day':scope]+'</p>'}
+function countText(lists){let n=0,d=0;lists.forEach(l=>l.forEach(t=>{n++;if(t.done)d++}));return n?d+'/'+n:''}
+function updateCounts(){const w=week();$('#cnt-now').textContent=countText([w.now]);$('#cnt-later').textContent=countText([S.later]);$('#cnt-remember').textContent=countText([w.remember]);$('#cnt-week').textContent=countText(w.days)}
+function autosize(el){const b=el.offsetHeight-el.clientHeight;el.style.height='auto';el.style.height=(el.scrollHeight+b)+'px'}
+function autosizeAll(){document.querySelectorAll('.task-input').forEach(autosize)}
+function render(){
+ const w=week(),start=keyDate(currentWeek),isCur=currentWeek===todayKey;
+ $('#weekLabel').textContent=formatWeek(currentWeek);
+ $('#weekSub').textContent=start.getFullYear()+' · '+isoWeek(start)+'. hét';
+ $('#curPill').hidden=!isCur;$('#todayBtn').hidden=isCur;
+ $('#list-now').innerHTML=listHTML(w.now,'now');
+ $('#list-later').innerHTML=listHTML(S.later,'later');
+ $('#list-remember').innerHTML=listHTML(w.remember,'remember');
+ const ti=isCur?Math.min((new Date().getDay()+6)%7,5):-1;
+ $('#weekGrid').innerHTML=DAYS.map((day,i)=>{
+  const d=plusDays(start,i),date=i<5?fmt(d):fmt(d)+' – '+fmt(plusDays(start,6));
+  return '<section class="day'+(i===ti?' today':'')+'"><h3><span>'+day+(i===ti?'<span class="pill">ma</span>':'')+'</span><small>'+date+'</small></h3><div class="task-list">'+listHTML(w.days[i],'day-'+i)+'</div><button class="add-row" data-add="day-'+i+'">Új sor</button></section>';
+ }).join('');
+ updateCounts();applyTheme();autosizeAll();
+}
+function effectiveTheme(){return S.theme==='auto'?(mq&&mq.matches?'dark':'light'):S.theme}
+function applyTheme(){
+ const t=effectiveTheme();document.documentElement.setAttribute('data-theme',t);
+ const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#29242e':'#eadcea');
+ document.querySelectorAll('[data-theme-set]').forEach(b=>b.setAttribute('aria-pressed',String(b.getAttribute('data-theme-set')===S.theme)));
+}
+function toast(msg,withUndo){
+ $('#toastMsg').textContent=msg;$('#toastUndo').hidden=!withUndo;$('#toast').classList.toggle('plain',!withUndo);$('#toast').hidden=false;
+ clearTimeout(toastTimer);toastTimer=setTimeout(hideToast,withUndo?6000:2800);
+}
+function hideToast(){$('#toast').hidden=true;undo=null}
+
+/* műveletek */
+function focusRow(scope,i){const el=document.querySelector('.task-row[data-scope="'+scope+'"][data-index="'+i+'"] .task-input');if(el){el.focus();const n=el.value.length;try{el.setSelectionRange(n,n)}catch(e){}}}
+function addTask(scope,at){
+ const list=getList(scope);if(!list)return;
+ if(list.length>=MAX_ITEMS){toast('Ez a lista megtelt (legfeljebb '+MAX_ITEMS+' sor).');return}
+ const i=(typeof at==='number'&&at>=0&&at<=list.length)?at:list.length;
+ list.splice(i,0,{id:uid(),text:'',done:false});save();render();focusRow(scope,i);
+}
+function removeTask(scope,i){
+ const list=getList(scope);if(!list||!list[i])return;
+ const item=list.splice(i,1)[0];save();render();
+ if(item.text.trim()){toast('Sor törölve',true);undo={scope:scope,week:currentWeek,index:i,item:item}}
+}
+function doUndo(){
+ if(!undo)return;const u=undo;hideToast();
+ currentWeek=u.week;const list=getList(u.scope);list.splice(Math.min(u.index,list.length),0,u.item);save();render();
+}
+function moveFromLater(id,target){
+ const i=S.later.findIndex(t=>t.id===id);if(i<0)return;
+ const list=getList(target);if(!list)return;
+ const item=S.later.splice(i,1)[0];item.done=false;list.push(item);
+ save();closeSheets();render();toast('Feladat áthelyezve');
+}
+function openSheet(id){lastFocus=document.activeElement;$(id).hidden=false;document.body.classList.add('sheet-open');const f=$(id).querySelector('.pick,button');if(f)f.focus()}
+function closeSheets(){
+ document.querySelectorAll('.sheet-backdrop').forEach(s=>{s.hidden=true});document.body.classList.remove('sheet-open');pendingTarget=null;
+ if(lastFocus&&document.body.contains(lastFocus)&&lastFocus.focus)lastFocus.focus();lastFocus=null;
+}
+function anySheetOpen(){return !!document.querySelector('.sheet-backdrop:not([hidden])')}
+function openLaterChoice(target){
+ const where=target==='now'?'a „Most” listába':'ide: '+DAYS[+target.split('-')[1]];
+ $('#laterChoices').innerHTML=S.later.map(t=>'<button class="pick" data-pick="'+esc(t.id)+'"><b>+</b><span>'+esc(t.text.trim()||'(üres feladat)')+'</span></button>').join('');
+ $('#laterTitle').textContent='Áthozod a későbbre mentettekből?';
+ $('#laterSheet').querySelector('p').textContent='Koppints egy elemre, és átkerül '+where+'. Vagy írj újat.';
+ openSheet('#laterSheet');pendingTarget=target;
+}
+function download(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function exportJSON(){download(new Blob([JSON.stringify({app:APP_ID,schema:SCHEMA,exportedAt:new Date().toISOString(),data:snapshot()},null,2)],{type:'application/json'}),'plans-mentes-'+weekKey(new Date()).slice(0,4)+'-'+pad(new Date().getMonth()+1)+'-'+pad(new Date().getDate())+'.json');toast('JSON-mentés elkészült')}
+function importJSON(file){
+ if(!file)return;
+ if(file.size>2*1024*1024){toast('A fájl túl nagy (legfeljebb 2 MB).');return}
+ const r=new FileReader();
+ r.onload=()=>{
+  let parsed;
+  try{parsed=JSON.parse(String(r.result))}catch(e){toast('A fájl nem olvasható JSON. A meglévő adatok megmaradtak.');return}
+  if(!parsed||parsed.app!==APP_ID||!parsed.data||typeof parsed.data!=='object'){toast('Ez nem Plans-mentés. A meglévő adatok megmaradtak.');return}
+  if(parsed.schema!==SCHEMA){toast('Ismeretlen mentésverzió. Frissítsd az appot.');return}
+  const next=cleanState(parsed.data);
+  if(!confirm('A betöltés lecseréli a jelenlegi adatokat ebben a böngészőben. Folytatod?'))return;
+  S=next;currentWeek=todayKey;save();closeSheets();render();toast('Adatok betöltve');
+ };
+ r.onerror=()=>toast('A fájl nem olvasható.');
+ r.readAsText(file);
+}
+function downloadHTML(){download(new Blob([PRISTINE],{type:'text/html'}),'plans.html');toast('Az offline HTML letöltése elindult')}
+function rowInfo(el){const row=el.closest('.task-row');if(!row)return null;return{row:row,scope:row.getAttribute('data-scope'),index:Number(row.getAttribute('data-index'))}}
+
+/* események */
+document.addEventListener('click',e=>{
+ if(e.target.classList&&e.target.classList.contains('sheet-backdrop')){closeSheets();return}
+ const add=e.target.closest('[data-add]');
+ if(add){const scope=add.getAttribute('data-add');if((scope==='now'||scope.indexOf('day-')===0)&&S.later.length)openLaterChoice(scope);else addTask(scope);return}
+ const pick=e.target.closest('[data-pick]');if(pick){moveFromLater(pick.getAttribute('data-pick'),pendingTarget);return}
+ const th=e.target.closest('[data-theme-set]');if(th){S.theme=th.getAttribute('data-theme-set');save();applyTheme();return}
+ const act=e.target.closest('[data-act]');if(!act)return;
+ switch(act.getAttribute('data-act')){
+  case'prev':currentWeek=addWeeks(currentWeek,-1);render();break;
+  case'next':currentWeek=addWeeks(currentWeek,1);render();break;
+  case'today':currentWeek=todayKey;render();break;
+  case'menu':openSheet('#menuSheet');break;
+  case'close':closeSheets();break;
+  case'export':exportJSON();break;
+  case'import':$('#importFile').click();break;
+  case'download':downloadHTML();break;
+  case'undo':doUndo();break;
+  case'modal-new':{const t=pendingTarget;closeSheets();if(t)addTask(t);break}
+  case'toggle':{const r=rowInfo(act),list=r&&getList(r.scope);if(!list||!list[r.index])break;const t=list[r.index];t.done=!t.done;r.row.classList.toggle('is-done',t.done);act.setAttribute('aria-checked',String(t.done));save();updateCounts();break}
+  case'remove':{const r=rowInfo(act);if(r)removeTask(r.scope,r.index);break}
+ }
+});
+document.addEventListener('input',e=>{
+ if(!e.target.classList.contains('task-input'))return;
+ const r=rowInfo(e.target),list=r&&getList(r.scope);
+ if(list&&list[r.index]){list[r.index].text=e.target.value.replace(/[\r\n]+/g,' ');save()}
+ autosize(e.target);
+});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&anySheetOpen()){closeSheets();return}
+ if(!e.target.classList||!e.target.classList.contains('task-input'))return;
+ if(e.isComposing||e.keyCode===229)return;
+ const r=rowInfo(e.target);if(!r)return;
+ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addTask(r.scope,r.index+1);return}
+ if(e.key==='Backspace'&&e.target.value===''){
+  e.preventDefault();const list=getList(r.scope);if(!list||!list[r.index])return;
+  list.splice(r.index,1);save();render();if(r.index>0)focusRow(r.scope,r.index-1);
+ }
+});
+$('#importFile').addEventListener('change',e=>{importJSON(e.target.files[0]);e.target.value=''});
+let rt=null;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(autosizeAll,150)});
+if(mq){const h=()=>{if(S.theme==='auto')applyTheme()};if(mq.addEventListener)mq.addEventListener('change',h);else if(mq.addListener)mq.addListener(h)}
+function checkDay(){const d=new Date();if(d.toDateString()===todayDate)return;const k=weekKey(d);if(currentWeek===todayKey)currentWeek=k;todayKey=k;todayDate=d.toDateString();if(!document.activeElement||!document.activeElement.classList.contains('task-input'))render()}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkDay()});
+setInterval(checkDay,60000);
+window.addEventListener('storage',e=>{if(e.key===STORAGE&&e.newValue){S=loadState();render()}});
+
+applyTheme();save();render();
+})();
+</script>
+</body>
+</html>
