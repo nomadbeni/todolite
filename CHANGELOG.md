@@ -1,5 +1,15 @@
 # Változásnapló
 
+## 1.1.1 – 2026-11-24
+
+Új:
+- A menüben van **Minden adat törlése** gomb (megerősítés után törli a böngészőben tárolt minden adatot; érdemes előtte JSON-mentést készíteni).
+
+Javítás:
+- Az üres sor Backspace billentyűvel való törlése is visszavonható lett, mint a koppintásos törlés.
+
+Megjegyzés: az egyfájlos felépítés miatt a CSP-ben marad `unsafe-inline` a beépített szkripthez és stílushoz; hálózati kérés az appból így sincs (`connect-src 'none'`).
+
 ## 1.1.0 – 2026-11-24
 
 Új:

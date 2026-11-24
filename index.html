@@ -207,7 +207,7 @@ html[data-theme="dark"] .toast button{background:rgba(0,0,0,.1);color:#2c2632}
 
   <footer class="footer">
     <p id="saveState">Az adatok csak ebben a böngészőben tárolódnak.</p>
-    <p>Plans v1.1.0 · Az alkalmazás kódját és leírását teljes egészében mesterséges intelligencia készítette (ChatGPT, OpenAI; átdolgozta: Claude Opus 5.5, Anthropic).</p>
+    <p>Plans v1.1.1 · Az alkalmazás kódját és leírását teljes egészében mesterséges intelligencia készítette (ChatGPT, OpenAI; átdolgozta: Claude Opus 5.5, Anthropic).</p>
   </footer>
 </div>
 
@@ -238,11 +238,13 @@ html[data-theme="dark"] .toast button{background:rgba(0,0,0,.1);color:#2c2632}
       <button class="pick" data-act="export"><b>↓</b><span>JSON mentése<small>Biztonsági mentés fájlba</small></span></button>
       <button class="pick" data-act="import"><b>↑</b><span>JSON betöltése<small>Korábbi mentés visszatöltése (lecseréli a mostani adatokat)</small></span></button>
       <button class="pick" data-act="download"><b>⌂</b><span>HTML letöltése<small>Offline példány, internet nélkül is fut</small></span></button>
+      <button class="pick" data-act="erase"><b>×</b><span>Minden adat törlése<small>A böngészőben tárolt minden feladat törlődik, vissza nem vonható</small></span></button>
     </div>
     <input id="importFile" type="file" accept="application/json,.json" aria-label="JSON-fájl kiválasztása">
     <details>
-      <summary>Plans v1.1.0 – változások</summary>
+      <summary>Plans v1.1.1 – változások</summary>
       <ul>
+        <li>1.1.1: „Minden adat törlése” a menüben; az üres sor Backspace-szel való törlése is visszavonható.</li>
         <li>1.1.0: kipipálható feladatok, visszavonható törlés, mobilos elrendezés, a mai nap kiemelése, menü, automatikus sortörés, javítások.</li>
         <li>1.0.0: első változat.</li>
       </ul>
@@ -358,7 +360,7 @@ function addTask(scope,at){
 function removeTask(scope,i){
  const list=getList(scope);if(!list||!list[i])return;
  const item=list.splice(i,1)[0];save();render();
- if(item.text.trim()){toast('Sor törölve',true);undo={scope:scope,week:currentWeek,index:i,item:item}}
+ toast('Sor törölve',true);undo={scope:scope,week:currentWeek,index:i,item:item}
 }
 function doUndo(){
  if(!undo)return;const u=undo;hideToast();
@@ -425,6 +427,7 @@ document.addEventListener('click',e=>{
   case'modal-new':{const t=pendingTarget;closeSheets();if(t)addTask(t);break}
   case'toggle':{const r=rowInfo(act),list=r&&getList(r.scope);if(!list||!list[r.index])break;const t=list[r.index];t.done=!t.done;r.row.classList.toggle('is-done',t.done);act.setAttribute('aria-checked',String(t.done));save();updateCounts();break}
   case'remove':{const r=rowInfo(act);if(r)removeTask(r.scope,r.index);break}
+  case'erase':{if(!confirm('Biztosan törlöd az összes feladatot ebben a böngészőben? Ha kell, előbb ments JSON-fájlba. A törlés nem vonható vissza.'))break;try{localStorage.removeItem(STORAGE)}catch(e){}S=cleanState(null);currentWeek=todayKey;save();closeSheets();render();toast('Minden adat törölve');break}
  }
 });
 document.addEventListener('input',e=>{
@@ -441,7 +444,7 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addTask(r.scope,r.index+1);return}
  if(e.key==='Backspace'&&e.target.value===''){
   e.preventDefault();const list=getList(r.scope);if(!list||!list[r.index])return;
-  list.splice(r.index,1);save();render();if(r.index>0)focusRow(r.scope,r.index-1);
+  removeTask(r.scope,r.index);if(r.index>0)focusRow(r.scope,r.index-1);
  }
 });
 $('#importFile').addEventListener('change',e=>{importJSON(e.target.files[0]);e.target.value=''});
@@ -457,3 +460,4 @@ applyTheme();save();render();
 </script>
 </body>
 </html>
+
