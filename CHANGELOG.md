@@ -1,5 +1,11 @@
 # Változásnapló
 
+## 1.2.0 – 2026-11-25
+
+Új:
+- Új megjelenés: világos, sci-fi versenyes műszerfal-stílus – nagy, vastag nagybetűs címek piros perjellel, csíkos fejléc-sávok, vonalas háttérminta, sötét „Most” panel, lekerekített „gomb-kapszulák”, piros kiemelések (mai nap, kipipált feladat).
+- A sötét téma is az új stílust követi.
+
 ## 1.1.1 – 2026-11-24
 
 Új:
